@@ -1,0 +1,232 @@
+
+{
+  "name": "AI-Powered Job Matching Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 18
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [-96, 0],
+      "id": "f5980666-2228-442b-a8e3-038699baa011",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.adzuna.com/v1/api/jobs/gb/search/1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "app_id",
+              "value": "YOUR_ADZUNA_APP_ID"
+            },
+            {
+              "name": "app_key",
+              "value": "YOUR_ADZUNA_APP_KEY"
+            },
+            {
+              "name": "results_per_page",
+              "value": "5"
+            },
+            {
+              "name": "what",
+              "value": "React Developer"
+            },
+            {
+              "name": "where",
+              "value": "London"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [144, 0],
+      "id": "776bb6b2-3974-4fba-9eaf-bce498aeb01c",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [384, 0],
+      "id": "cd5a7a0d-ec24-4164-a6e5-325ad60fc159",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ad9578a3-f704-46f8-b98c-6a2a40cf619f",
+              "name": "position",
+              "value": "={{ $json.results.title }}",
+              "type": "string"
+            },
+            {
+              "id": "9499a256-bab9-4e4a-b9e5-a8ac81b7d02b",
+              "name": "company",
+              "value": "={{ $json.results.company.display_name }}",
+              "type": "string"
+            },
+            {
+              "id": "214a42b6-7792-462f-976b-e7226663b78d",
+              "name": "location",
+              "value": "={{ $json.results.location.display_name }}",
+              "type": "string"
+            },
+            {
+              "id": "989074c3-a16f-45bb-82e0-757b67377b29",
+              "name": "jobUrl",
+              "value": "={{ $json.results.redirect_url }}",
+              "type": "string"
+            },
+            {
+              "id": "2cb01f50-107d-466c-b6ff-304ffa5462bd",
+              "name": "description",
+              "value": "={{ $json.results.description }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [592, 0],
+      "id": "d64bd926-c4c7-4cbc-a0bc-4b6becd148fa",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bir iş ilanını aday profiline göre değerlendir.\n\nİŞ İLANI:\n\nPozisyon: {{$json.position}}\nŞirket: {{$json.company}}\nLokasyon: {{$json.location}}\nİlan Açıklaması:\n{{$json.description}}\nİlan Linki:\n{{$json.jobUrl}}\n\nADAY PROFİLİ:\n\nFrontend ve Full-Stack Developer.\n\nTeknik beceriler:\n- React\n- React Native\n- TypeScript\n- JavaScript\n- Redux / Redux Toolkit (RTK)\n- Node.js\n- Express.js\n- REST API\n- MongoDB\n- SQL\n- Docker\n- RabbitMQ\n- Microservices\n\nAyrıca AI ve automation alanlarında kendini geliştirmektedir.\n\nGÖREV:\n\nİlan açıklamasını aday profilindeki becerilerle karşılaştır.\n\n1. Uygunluk Skoru: 0 ile 100 arasında tek bir sayı ver.\n2. Öncelik: 80-100 Yüksek, 60-79 Orta, 40-59 Düşük, 0-39 Çok Düşük.\n3. Eksik Beceriler: Yalnızca ilanda açıkça istenen ve aday profilinde bulunmayan önemli teknik becerileri yaz. Yoksa Yok yaz.\n4. Kısa Değerlendirme: 2-3 cümleyle açıkla.\n\nÖNEMLİ:\n- İlan açıklamasında bulunmayan bir gereksinimi varsayma.\n- Adayın profilinde bulunan becerileri eksik gösterme.\n- Pozisyon, şirket, lokasyon ve ilan linkini verilen verilerden aynen kullan.\n- İlan açıklaması boşsa bunu belirt ve yalnızca mevcut bilgiler üzerinden değerlendir.\n- Skoru gerçek beceri eşleşmesine göre belirle; varsayılan olarak 70 verme.\n- Öncelik aralığı ile skor birbiriyle tutarlı olsun.\n- Yalnızca aşağıdaki formatta cevap ver.\n\nPozisyon: [pozisyon]\nŞirket: [şirket]\nLokasyon: [lokasyon]\nİlan Linki: [link]\n\nUygunluk Skoru: [0-100]\nÖncelik: [Yüksek/Orta/Düşük/Çok Düşük]\nEksik Beceriler: [liste veya Yok]\nKısa Değerlendirme: [2-3 cümle]\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [768, 0],
+      "id": "fae8c37d-7c39-4e68-943c-139ee487d696",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [688, 272],
+      "id": "6c5a01c0-27a5-47e6-a74c-fdfc7a5b202d",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_EMAIL@example.com",
+        "subject": "İş İlanı Uygunluk Analizi",
+        "emailType": "text",
+        "message": "={{$json.text}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1088, 0],
+      "id": "e0acf4d9-f861-47e4-bf3c-c3bfe65e961d",
+      "name": "Send a message"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Europe/Istanbul"
+  },
+  "pinData": {},
+  "tags": []
+}
